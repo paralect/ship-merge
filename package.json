@@ -1,0 +1,26 @@
+{
+  "name": "stack-merge",
+  "description": "A simple utility that helps merging stack-components into Ship 🚀",
+  "author": "Paralect, LLC",
+  "license": "MIT",
+  "devDependencies": {
+    "@paralect/eslint-config": "^0.1.5",
+    "all-contributors-cli": "^4.10.0",
+    "eslint": "^4.13.0",
+    "babel-eslint": "8.0.1",
+    "eslint-plugin-import": "2.8.0",
+    "eslint-plugin-jsx-a11y": "6.0.2",
+    "eslint-plugin-react": "7.4.0"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "eslint ./src",
+    "add-contributor": "all-contributors add",
+    "generate-contributors": "all-contributors generate"
+  },
+  "dependencies": {
+    "@paralect/common-logger": "^0.1.10",
+    "fs-extra": "^5.0.0",
+    "nodegit": "^0.20.3"
+  }
+}
