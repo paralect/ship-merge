@@ -22,7 +22,9 @@ filesToRemove=( ".drone.yml"
                 "LICENSE"
                 "CHANGELOG.md"
                 "CODE_OF_CONDUCT.md"
-                ".all-contributorsrc" )
+                ".all-contributorsrc"
+                "CONTRIBUTING.md"
+                "README.md" )
 
 repositoryActions() {
   declare -a files=("${!3}")
@@ -45,6 +47,8 @@ repositoryActions() {
   git filter-branch --tree-filter "
     GLOBIGNORE='n*';
     rm ${files[*]};
+    mv SHIP_README.md README.md
+    sed -i '/all-contributor/d' package.json
     mkdir -p ../temp_path;
     mv * ../temp_path;
     mkdir $2;
@@ -60,10 +64,15 @@ repositoryActions() {
 }
 
 removeAllContributors() {
+  cd ./$1/$2
   # Remove all contributors from package.json
   sed -i -e '/all-contributor/d; :a;N;$!ba;s/,\n  }/\n  }/g' package.json
-  # Remove all contributors from README.md
-  sed -i '/All Contributors/d; /^## Contributors/,$d' README.md
+  rm package-lock.json
+  npm i --quiet
+
+  cd ../
+  git add -A
+  git commit -m "remove comtributors"
 }
 
 echo "=== CLONE REPOSITORIES ==="
@@ -78,8 +87,14 @@ repositoryActions ${paths[0]} "web" filesToRemove[@]
 repositoryActions ${paths[1]} "api" filesToRemove[@]
 repositoryActions ${paths[2]} "landing" filesToRemove[@]
 
+removeAllContributors ${paths[0]} "web"
+removeAllContributors ${paths[1]} "api"
+removeAllContributors ${paths[2]} "landing"
+
 echo "=== START COPY COMMITS TO THE SHIP REPOSITORY ==="
 cd ./ship
+
+git filter-branch --tree-filter "rm ./api ./web ./landing;" --force HEAD
     
 for path in ${paths[@]}
 do
