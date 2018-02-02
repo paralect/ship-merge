@@ -72,7 +72,7 @@ removeAllContributors() {
 
   cd ../
   git add -A
-  git commit -m "remove comtributors"
+  git commit -m "remove contributors"
 }
 
 echo "=== CLONE REPOSITORIES ==="
