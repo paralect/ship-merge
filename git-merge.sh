@@ -13,6 +13,8 @@ paths=( "koa-react-starter"
         "koa-api-starter"
         "nextjs-landing-starter" )
 
+paths=( "koa-react-starter" )
+
 environmentPaths=( "web/src/server/config/environment"
                    "api/src/config/environment"
                    "landing/src/server/config/environment" )
@@ -54,7 +56,7 @@ repositoryActions() {
     mkdir $2;
     mv ../temp_path/* $2/;
     unset GLOBIGNORE;
-  " --force HEAD
+  " --force --prune-empty HEAD
   
   git branch -D master
   git checkout -b master
@@ -73,6 +75,7 @@ removeAllContributors() {
   cd ../
   git add -A
   git commit -m "remove contributors"
+  cd ../
 }
 
 echo "=== CLONE REPOSITORIES ==="
@@ -93,8 +96,6 @@ removeAllContributors ${paths[2]} "landing"
 
 echo "=== START COPY COMMITS TO THE SHIP REPOSITORY ==="
 cd ./ship
-
-git filter-branch --tree-filter "rm ./api ./web ./landing;" --force HEAD
     
 for path in ${paths[@]}
 do
