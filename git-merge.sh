@@ -1,19 +1,32 @@
 #!/bin/bash
 
+API=$false;
+WEB=$false;
+LANDING=$false;
+
+while getopts a:w:l: option
+do
+ case "${option}"
+ in
+ a) API=${OPTARG};;
+ r) WEB=${OPTARG};;
+ l) LANDING=${OPTARG};;
+ esac
+done
+
 rm -rf ./temp_repos
 mkdir ./temp_repos
 cd ./temp_repos
 
-repositories=( "https://github.com/paralect/ship"
-               "https://github.com/paralect/koa-react-starter"
-               "https://github.com/paralect/koa-api-starter"
-               "https://github.com/paralect/nextjs-landing-starter" )
+shipRepository="https://github.com/paralect/ship"
+reactRepository="https://github.com/paralect/koa-react-starter"
+apiRepository="https://github.com/paralect/koa-api-starter"
+landingRepository="https://github.com/paralect/nextjs-landing-starter"
 
-paths=( "koa-react-starter"
-        "koa-api-starter"
-        "nextjs-landing-starter" )
-
-paths=( "koa-react-starter" )
+shipPath="ship"
+reactPath="koa-react-starter"
+apiPath="koa-api-starter"
+landingPath="nextjs-landing-starter"
 
 environmentPaths=( "web/src/server/config/environment"
                    "api/src/config/environment"
@@ -29,20 +42,14 @@ filesToRemove=( ".drone.yml"
                 "README.md" )
 
 repositoryActions() {
-  declare -a files=("${!3}")
+  declare -a files=("${!4}")
   cd ./$1
   
   echo "### $1 ###"
 
-  echo "=== CHECKOUT TO THE LATEST TAG ==="
-  tags=($(git tag))
-
-  if [ ${#tags[@]} -gt 0 ]
-  then
-      latestTag=$(git describe --tags `git rev-list --tags --max-count=1`)
-      git checkout tags/${latestTag}
+  if [ $2 -ne "master" ]
+    git checkout tags/$2
   fi
-  echo "=== DONE CHECKOUT ==="
 
   echo "=== START REMOVE UNNECESSARY FILES FROM HISTORY ==="
   
@@ -53,8 +60,8 @@ repositoryActions() {
     sed -i '/all-contributor/d' package.json
     mkdir -p ../temp_path;
     mv * ../temp_path;
-    mkdir $2;
-    mv ../temp_path/* $2/;
+    mkdir $3;
+    mv ../temp_path/* $3/;
     unset GLOBIGNORE;
   " --force --prune-empty HEAD
   
@@ -78,33 +85,74 @@ removeAllContributors() {
   cd ../
 }
 
-echo "=== CLONE REPOSITORIES ==="
-for element in ${repositories[@]}
-do
-  echo "clonning $element"
-  git clone $element
-done
-echo "=== DONE CLONE REPOSITORIES ==="
+cloneRepository() {
+  echo "=== CLONE REPOSITORY $1 ==="
+  git clone $1
+  echo "=== DONE CLONE REPOSITORY $1 ==="
+}
 
-repositoryActions ${paths[0]} "web" filesToRemove[@]
-repositoryActions ${paths[1]} "api" filesToRemove[@]
-repositoryActions ${paths[2]} "landing" filesToRemove[@]
+copyCommitsToShip() {
+  echo "=== START COPY COMMITS TO THE SHIP REPOSITORY from $1 ==="
+  cd ./$shipPath
+      
+  git remote add repo-$1 ../$1/.git
+  git pull repo-$1 master --allow-unrelated-histories --no-edit
+  git remote rm repo-$1
 
-removeAllContributors ${paths[0]} "web"
-removeAllContributors ${paths[1]} "api"
-removeAllContributors ${paths[2]} "landing"
+  echo "=== END COPY COMMITS ==="
+  cd ../
+}
 
-echo "=== START COPY COMMITS TO THE SHIP REPOSITORY ==="
-cd ./ship
-    
-for path in ${paths[@]}
-do
-  git remote add repo-$path ../$path/.git
-  git pull repo-$path master --allow-unrelated-histories --no-edit
-  git remote rm repo-$path
-done
-echo "=== END COPY COMMITS ==="
-cd ../../
+cloneRepository $shipRepository
+if [ $API -ne $false ]
+then
+  cloneRepository $apiRepository
+
+  if [ $API -eq "latest" ]
+  then
+    cd ./$apiPath
+    API=$(git describe --tags `git rev-list --tags --max-count=1`)
+    cd ../
+  fi
+
+  repositoryActions $apiPath $API "api" filesToRemove[@]
+  removeAllContributors $apiPath "api"
+  copyCommitsToShip $apiPath
+fi
+
+if [ $WEB -ne $false ]
+then
+  cloneRepository $reactRepository
+
+  if [ $WEB -eq "latest" ]
+  then
+    cd ./$reactPath
+    WEB=$(git describe --tags `git rev-list --tags --max-count=1`)
+    cd ../
+  fi
+
+  repositoryActions $reactPath $WEB "web" filesToRemove[@]
+  removeAllContributors $reactPath "web"
+  copyCommitsToShip $reactPath
+fi
+
+if [ $LANDING -ne $false ]
+then
+  cloneRepository $landingRepository
+
+  if [ $LANDING -eq "latest" ]
+  then
+    cd ./$landingPath
+    LANDING=$(git describe --tags `git rev-list --tags --max-count=1`)
+    cd ../
+  fi
+
+  repositoryActions $landingPath $LANDING "landing" filesToRemove[@]
+  removeAllContributors $landingPath "landing"
+  copyCommitsToShip $landingPath
+fi
+
+cd ../
 
 echo "=== COPY STAGING ENVIRONMENT FILE ==="
 for envPath in ${environmentPaths[@]}
