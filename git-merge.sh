@@ -1,18 +1,14 @@
 #!/bin/bash
 
-API=$false;
-WEB=$false;
-LANDING=$false;
+INCLUDE_API=false;
+INCLUDE_WEB=false;
+INCLUDE_LANDING=false;
 
-while getopts a:w:l: option
-do
- case "${option}"
- in
- a) API=${OPTARG};;
- r) WEB=${OPTARG};;
- l) LANDING=${OPTARG};;
- esac
-done
+API_VERSION="";
+WEB_VERSION="";
+LANDING_VERSION="";
+
+SHIP_VERSION="";
 
 rm -rf ./temp_repos
 mkdir ./temp_repos
@@ -39,7 +35,8 @@ filesToRemove=( ".drone.yml"
                 "CODE_OF_CONDUCT.md"
                 ".all-contributorsrc"
                 "CONTRIBUTING.md"
-                "README.md" )
+                "README.md"
+                "package-lock.json" )
 
 repositoryActions() {
   declare -a files=("${!4}")
@@ -47,7 +44,8 @@ repositoryActions() {
   
   echo "### $1 ###"
 
-  if [ $2 -ne "master" ]
+  if [ "$2" -ne "master" ]
+  then
     git checkout tags/$2
   fi
 
@@ -76,8 +74,6 @@ removeAllContributors() {
   cd ./$1/$2
   # Remove all contributors from package.json
   sed -i -e '/all-contributor/d; :a;N;$!ba;s/,\n  }/\n  }/g' package.json
-  rm package-lock.json
-  npm i --quiet
 
   cd ../
   git add -A
@@ -103,60 +99,135 @@ copyCommitsToShip() {
   cd ../
 }
 
+parseYaml() {
+  local prefix=$2
+  local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
+  sed -ne "s|^\($s\)\($w\)$s:$s\"\(.*\)\"$s\$|\1$fs\2$fs\3|p" \
+    -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  $1 |
+  awk -F$fs '{
+    indent = length($1)/2;
+    vname[indent] = $2;
+    for (i in vname) {if (i > indent) {delete vname[i]}}
+    if (length($3) > 0) {
+        vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
+        printf("%s%s%s=\"%s\"\n", "'$prefix'",vn, $2, $3);
+    }
+  }'
+}
+
+regeneratePackageLock() {
+  cd ./$1
+  # Remove all contributors from package-lock.json
+  rm package-lock.json
+  npm i --quiet
+
+  cd ../
+}
+
 cloneRepository $shipRepository
-if [ $API -ne $false ]
+
+echo "=== PARSE release.yml FILE ==="
+cd ./$shipPath
+eval $(parseYaml release.yml "config_")
+cd ../
+
+INCLUDE_API=$config_services_api_include;
+INCLUDE_WEB=$config_services_web_include;
+INCLUDE_LANDING=$config_services_landing_include;
+
+SHIP_VERSION=$config_services_ship_version;
+API_VERSION=$config_services_api_version;
+WEB_VERSION=$config_services_web_version;
+LANDING_VERSION=$config_services_landing_version;
+
+echo "=== END PARSE FILE ==="
+
+skipCommits=0;
+
+# cd ./$shipPath
+# git filter-branch --tree-filter "rm ./api ./web ./landing;" --force --prune-empty HEAD
+# cd ../
+
+if [ "$INCLUDE_API" = true ]
 then
   cloneRepository $apiRepository
 
-  if [ $API -eq "latest" ]
+  if [ "$API_VERSION" = "latest" ]
   then
     cd ./$apiPath
     API=$(git describe --tags `git rev-list --tags --max-count=1`)
     cd ../
   fi
 
-  repositoryActions $apiPath $API "api" filesToRemove[@]
+  repositoryActions $apiPath $API_VERSION "api" filesToRemove[@]
   removeAllContributors $apiPath "api"
   copyCommitsToShip $apiPath
+
+  ((skipCommits+=1))
 fi
 
-if [ $WEB -ne $false ]
+if [ "$INCLUDE_WEB" = true ]
 then
   cloneRepository $reactRepository
 
-  if [ $WEB -eq "latest" ]
+  if [ "$WEB_VERSION" = "latest" ]
   then
     cd ./$reactPath
     WEB=$(git describe --tags `git rev-list --tags --max-count=1`)
     cd ../
   fi
 
-  repositoryActions $reactPath $WEB "web" filesToRemove[@]
+  repositoryActions $reactPath $WEB_VERSION "web" filesToRemove[@]
   removeAllContributors $reactPath "web"
   copyCommitsToShip $reactPath
+
+  ((skipCommits+=1))
 fi
 
-if [ $LANDING -ne $false ]
+if [ "$INCLUDE_LANDING" = true ]
 then
   cloneRepository $landingRepository
 
-  if [ $LANDING -eq "latest" ]
+  if [ "$LANDING_VERSION" = "latest" ]
   then
     cd ./$landingPath
     LANDING=$(git describe --tags `git rev-list --tags --max-count=1`)
     cd ../
   fi
 
-  repositoryActions $landingPath $LANDING "landing" filesToRemove[@]
+  repositoryActions $landingPath $LANDING_VERSION "landing" filesToRemove[@]
   removeAllContributors $landingPath "landing"
   copyCommitsToShip $landingPath
+
+  ((skipCommits+=1))
 fi
 
-cd ../
+cd ./$shipPath
+
+if [ $skipCommits > 0 ]
+then
+  git reset --soft HEAD~$skipCommits;
+fi
 
 echo "=== COPY STAGING ENVIRONMENT FILE ==="
 for envPath in ${environmentPaths[@]}
 do
-  cp ./staging.js "./temp_repos/ship/$envPath/staging.js"
+  cp ../../staging.js "./$envPath/staging.js"
 done
 echo "=== DONE COPY STAGING ENVIRONMENT FILE ==="
+
+sed -i "1s/^/  3) web version [$WEB_VERSION](https:\/\/github.com\/paralect\/koa-react-starter\/releases\/tag\/$WEB_VERSION)\n\n/" CHANGELOG.md
+sed -i "1s/^/  2) landing version [$LANDING_VERSION](https:\/\/github.com\/paralect\/nextjs-landing-starter\/releases\/tag\/$LANDING_VERSION)\n/" CHANGELOG.md
+sed -i "1s/^/  1) api version [$API_VERSION](https:\/\/github.com\/paralect\/koa-api-starter\/releases\/tag\/$API_VERSION)\n/" CHANGELOG.md
+sed -i "1s/^/* New release of ship with the following components:\n/" CHANGELOG.md
+
+releaseDate=`date '+%B %d, %Y'`;
+sed -i "1s/^/## $SHIP_VERSION ($releaseDate)\n\n/" CHANGELOG.md
+
+regeneratePackageLock "api"
+regeneratePackageLock "web"
+regeneratePackageLock "landing"
+
+git add -A;
+git commit -m "Version $SHIP_VERSION";
+git tag $SHIP_VERSION;
