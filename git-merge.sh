@@ -51,12 +51,12 @@ repositoryActions() {
 
   echo "=== START REMOVE UNNECESSARY FILES FROM HISTORY ==="
   
-    # sed -i '/all-contributor/d' package.json
   git filter-branch --tree-filter "
     GLOBIGNORE='n*';
     rm ${files[*]};
     mv SHIP_README.md README.md
-    sed -i -e '/all-contributor/d; :a;N;$!ba;s/,\n  }/\n  }/g' package.json
+    sed -i '/all-contributor/d' package.json
+    sed -i ':a;N;$!ba;s/,\n  }/\n  }/g' package.json
     mkdir -p ../temp_path;
     mv * ../temp_path;
     mkdir $3;
