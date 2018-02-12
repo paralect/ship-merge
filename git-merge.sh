@@ -145,9 +145,9 @@ echo "=== END PARSE FILE ==="
 
 skipCommits=0;
 
-cd ./$shipPath
-git filter-branch --tree-filter "rm -rf ./api ./web ./landing;" --force --prune-empty HEAD
-cd ../
+# cd ./$shipPath
+# git filter-branch --tree-filter "rm -rf ./api ./web ./landing;" --force --prune-empty HEAD
+# cd ../
 
 if [ "$INCLUDE_API" = true ]
 then
@@ -161,7 +161,7 @@ then
   fi
 
   repositoryActions $apiPath $API_VERSION "api" filesToRemove[@]
-  removeAllContributors $apiPath "api"
+  # removeAllContributors $apiPath "api"
   copyCommitsToShip $apiPath
 
   ((skipCommits+=1))
@@ -179,7 +179,7 @@ then
   fi
 
   repositoryActions $reactPath $WEB_VERSION "web" filesToRemove[@]
-  removeAllContributors $reactPath "web"
+  # removeAllContributors $reactPath "web"
   copyCommitsToShip $reactPath
 
   ((skipCommits+=1))
@@ -197,7 +197,7 @@ then
   fi
 
   repositoryActions $landingPath $LANDING_VERSION "landing" filesToRemove[@]
-  removeAllContributors $landingPath "landing"
+  # removeAllContributors $landingPath "landing"
   copyCommitsToShip $landingPath
 
   ((skipCommits+=1))
