@@ -44,18 +44,19 @@ repositoryActions() {
   
   echo "### $1 ###"
 
-  if [ "$2" -ne "master" ]
+  if [ "$2" != "master" ]
   then
     git checkout tags/$2
   fi
 
   echo "=== START REMOVE UNNECESSARY FILES FROM HISTORY ==="
   
+    # sed -i '/all-contributor/d' package.json
   git filter-branch --tree-filter "
     GLOBIGNORE='n*';
     rm ${files[*]};
     mv SHIP_README.md README.md
-    sed -i '/all-contributor/d' package.json
+    sed -i -e '/all-contributor/d; :a;N;$!ba;s/,\n  }/\n  }/g' package.json
     mkdir -p ../temp_path;
     mv * ../temp_path;
     mkdir $3;
@@ -144,9 +145,9 @@ echo "=== END PARSE FILE ==="
 
 skipCommits=0;
 
-# cd ./$shipPath
-# git filter-branch --tree-filter "rm ./api ./web ./landing;" --force --prune-empty HEAD
-# cd ../
+cd ./$shipPath
+git filter-branch --tree-filter "rm -rf ./api ./web ./landing;" --force --prune-empty HEAD
+cd ../
 
 if [ "$INCLUDE_API" = true ]
 then
@@ -202,12 +203,11 @@ then
   ((skipCommits+=1))
 fi
 
-cd ./$shipPath
-
-if [ $skipCommits > 0 ]
-then
-  git reset --soft HEAD~$skipCommits;
-fi
+# cd ./$shipPath
+# if [ "$skipCommits" -gt "0" ]
+# then
+#   git reset --soft HEAD~$skipCommits;
+# fi
 
 echo "=== COPY STAGING ENVIRONMENT FILE ==="
 for envPath in ${environmentPaths[@]}
@@ -224,10 +224,12 @@ sed -i "1s/^/* New release of ship with the following components:\n/" CHANGELOG.
 releaseDate=`date '+%B %d, %Y'`;
 sed -i "1s/^/## $SHIP_VERSION ($releaseDate)\n\n/" CHANGELOG.md
 
-regeneratePackageLock "api"
-regeneratePackageLock "web"
-regeneratePackageLock "landing"
+# regeneratePackageLock "api"
+# regeneratePackageLock "web"
+# regeneratePackageLock "landing"
 
 git add -A;
 git commit -m "Version $SHIP_VERSION";
 git tag $SHIP_VERSION;
+
+git remote set-url origin git@github.com:paralect/ship
