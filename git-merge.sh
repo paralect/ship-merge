@@ -56,7 +56,7 @@ repositoryActions() {
     rm ${files[*]};
     mv SHIP_README.md README.md
     sed -i '/all-contributor/d' package.json
-    sed -i ':a;N;$!ba;s/,\n  }/\n  }/g' package.json
+    sed -zri 's/,\n  }/\n  }/g' package.json
     mkdir -p ../temp_path;
     mv * ../temp_path;
     mkdir $3;
@@ -68,17 +68,6 @@ repositoryActions() {
   git checkout -b master
   echo "=== DONE REMOVE FILES FROM HISTORY ==="
 
-  cd ../
-}
-
-removeAllContributors() {
-  cd ./$1/$2
-  # Remove all contributors from package.json
-  sed -i -e '/all-contributor/d; :a;N;$!ba;s/,\n  }/\n  }/g' package.json
-
-  cd ../
-  git add -A
-  git commit -m "remove contributors"
   cd ../
 }
 
@@ -143,8 +132,6 @@ LANDING_VERSION=$config_services_landing_version;
 
 echo "=== END PARSE FILE ==="
 
-skipCommits=0;
-
 # cd ./$shipPath
 # git filter-branch --tree-filter "rm -rf ./api ./web ./landing;" --force --prune-empty HEAD
 # cd ../
@@ -161,10 +148,7 @@ then
   fi
 
   repositoryActions $apiPath $API_VERSION "api" filesToRemove[@]
-  # removeAllContributors $apiPath "api"
   copyCommitsToShip $apiPath
-
-  ((skipCommits+=1))
 fi
 
 if [ "$INCLUDE_WEB" = true ]
@@ -179,10 +163,7 @@ then
   fi
 
   repositoryActions $reactPath $WEB_VERSION "web" filesToRemove[@]
-  # removeAllContributors $reactPath "web"
   copyCommitsToShip $reactPath
-
-  ((skipCommits+=1))
 fi
 
 if [ "$INCLUDE_LANDING" = true ]
@@ -197,17 +178,8 @@ then
   fi
 
   repositoryActions $landingPath $LANDING_VERSION "landing" filesToRemove[@]
-  # removeAllContributors $landingPath "landing"
   copyCommitsToShip $landingPath
-
-  ((skipCommits+=1))
 fi
-
-# cd ./$shipPath
-# if [ "$skipCommits" -gt "0" ]
-# then
-#   git reset --soft HEAD~$skipCommits;
-# fi
 
 echo "=== COPY STAGING ENVIRONMENT FILE ==="
 for envPath in ${environmentPaths[@]}
@@ -224,9 +196,9 @@ sed -i "1s/^/* New release of ship with the following components:\n/" CHANGELOG.
 releaseDate=`date '+%B %d, %Y'`;
 sed -i "1s/^/## $SHIP_VERSION ($releaseDate)\n\n/" CHANGELOG.md
 
-# regeneratePackageLock "api"
-# regeneratePackageLock "web"
-# regeneratePackageLock "landing"
+regeneratePackageLock "api"
+regeneratePackageLock "web"
+regeneratePackageLock "landing"
 
 git add -A;
 git commit -m "Version $SHIP_VERSION";
