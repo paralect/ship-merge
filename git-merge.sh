@@ -182,6 +182,7 @@ then
 fi
 
 echo "=== COPY STAGING ENVIRONMENT FILE ==="
+cd ./$shipPath
 for envPath in ${environmentPaths[@]}
 do
   cp ../../staging.js "./$envPath/staging.js"
@@ -204,4 +205,4 @@ git add -A;
 git commit -m "Version $SHIP_VERSION";
 git tag $SHIP_VERSION;
 
-git remote set-url origin git@github.com:paralect/ship
+# git remote set-url origin git@github.com:paralect/ship
