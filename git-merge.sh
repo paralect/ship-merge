@@ -3,10 +3,12 @@
 INCLUDE_API=false;
 INCLUDE_WEB=false;
 INCLUDE_LANDING=false;
+INCLUDE_DRONE=false;
 
 API_VERSION="";
 WEB_VERSION="";
 LANDING_VERSION="";
+DRONE_VERSION="";
 
 SHIP_VERSION="";
 
@@ -18,15 +20,17 @@ shipRepository="https://github.com/paralect/ship"
 reactRepository="https://github.com/paralect/koa-react-starter"
 apiRepository="https://github.com/paralect/koa-api-starter"
 landingRepository="https://github.com/paralect/nextjs-landing-starter"
+droneRepository="https://github.com/paralect/deploy-drone"
 
 shipPath="ship"
 reactPath="koa-react-starter"
 apiPath="koa-api-starter"
 landingPath="nextjs-landing-starter"
+dronePath="deploy-drone"
 
-environmentPaths=( "web/src/server/config/environment"
-                   "api/src/config/environment"
-                   "landing/src/server/config/environment" )
+reactEnvironmentPath="src/server/config/environment"
+apiEnvironmentPath="src/config/environment"
+landingEnvironmentPath="src/server/config/environment"
 
 filesToRemove=( ".drone.yml"
                 "docker-compose.yml"
@@ -71,6 +75,35 @@ repositoryActions() {
   cd ../
 }
 
+repositoryActions2() {
+  declare -a files=("${!4}")
+  cd ./$1
+  
+  echo "### $1 ###"
+
+  if [ "$2" != "master" ]
+  then
+    git checkout tags/$2
+  fi
+
+  echo "=== START REMOVE UNNECESSARY FILES FROM HISTORY ==="
+  
+  GLOBIGNORE='n*';
+  rm -f ${files[*]};
+  mv SHIP_README.md README.md
+  sed -i '/all-contributor/d' package.json
+  sed -zri 's/,\n  }/\n  }/g' package.json
+  mkdir -p ../temp_path;
+  mv * ../temp_path;
+  mkdir $3;
+  mv ../temp_path/* $3/;
+  unset GLOBIGNORE;
+  
+  echo "=== DONE REMOVE FILES FROM HISTORY ==="
+
+  cd ../
+}
+
 cloneRepository() {
   echo "=== CLONE REPOSITORY $1 ==="
   git clone $1
@@ -86,6 +119,32 @@ copyCommitsToShip() {
   git remote rm repo-$1
 
   echo "=== END COPY COMMITS ==="
+  cd ../
+}
+
+copyFileToShip() {
+  echo "=== START COPY FILES TO THE SHIP REPOSITORY FROM $1 ==="
+  
+  rm -rf ./$shipPath/$2
+  cp ./$1/$2 ./$shipPath/$2
+  
+  echo "=== END COPY FILES ==="
+}
+
+copyStagingEnvironmentFile() {
+  echo "=== COPY STAGING ENVIRONMENT FILE ==="
+  cp ../staging.js "./$1/$2/staging.js"
+  echo "=== DONE COPY STAGING ENVIRONMENT FILE ==="
+}
+
+commitFiles() {
+  echo "=== START COMMIT $1 FILES==="
+
+  cd ./$ship
+  git add -A;
+  git commit -m "Merge $1. Version $2"
+
+  echo "=== END COMMIT FILES ==="
   cd ../
 }
 
@@ -108,10 +167,25 @@ parseYaml() {
 regeneratePackageLock() {
   cd ./$1
   # Remove all contributors from package-lock.json
-  rm package-lock.json
+  rm -f package-lock.json
   npm i --quiet
+  rm -rf ./node_modules
 
-  cd ../
+  cd ../../
+}
+
+changeRepository() {
+  repositoryActions2 $1 $2 $3 filesToRemove[@]
+  copyStagingEnvironmentFile "$1/$3" $4
+  regeneratePackageLock "$1/$3"
+  copyFileToShip $1 $3
+  commitFiles $1 $2
+}
+
+changeDroneRepository() {
+  cd ./$dronePath/deploy/drone-ci
+  rm package.json
+  cd ../../../
 }
 
 cloneRepository $shipRepository
@@ -143,12 +217,13 @@ then
   if [ "$API_VERSION" = "latest" ]
   then
     cd ./$apiPath
-    API=$(git describe --tags `git rev-list --tags --max-count=1`)
+    API_VERSION=$(git describe --tags `git rev-list --tags --max-count=1`)
     cd ../
   fi
 
-  repositoryActions $apiPath $API_VERSION "api" filesToRemove[@]
-  copyCommitsToShip $apiPath
+  # repositoryActions $apiPath $API_VERSION "api" filesToRemove[@]
+  # copyCommitsToShip $apiPath
+  changeRepository $apiPath $API_VERSION "api" $apiEnvironmentPath
 fi
 
 if [ "$INCLUDE_WEB" = true ]
@@ -158,12 +233,13 @@ then
   if [ "$WEB_VERSION" = "latest" ]
   then
     cd ./$reactPath
-    WEB=$(git describe --tags `git rev-list --tags --max-count=1`)
+    WEB_VERSION=$(git describe --tags `git rev-list --tags --max-count=1`)
     cd ../
   fi
 
-  repositoryActions $reactPath $WEB_VERSION "web" filesToRemove[@]
-  copyCommitsToShip $reactPath
+  # repositoryActions $reactPath $WEB_VERSION "web" filesToRemove[@]
+  # copyCommitsToShip $reactPath
+  changeRepository $reactPath $WEB_VERSION "web" $reactEnvironmentPath
 fi
 
 if [ "$INCLUDE_LANDING" = true ]
@@ -173,22 +249,33 @@ then
   if [ "$LANDING_VERSION" = "latest" ]
   then
     cd ./$landingPath
-    LANDING=$(git describe --tags `git rev-list --tags --max-count=1`)
+    LANDING_VERSION=$(git describe --tags `git rev-list --tags --max-count=1`)
     cd ../
   fi
 
-  repositoryActions $landingPath $LANDING_VERSION "landing" filesToRemove[@]
-  copyCommitsToShip $landingPath
+  # repositoryActions $landingPath $LANDING_VERSION "landing" filesToRemove[@]
+  # copyCommitsToShip $landingPath
+  changeRepository $landingPath $LANDING_VERSION "landing" $landingEnvironmentPath
 fi
 
-echo "=== COPY STAGING ENVIRONMENT FILE ==="
-cd ./$shipPath
-for envPath in ${environmentPaths[@]}
-do
-  cp ../../staging.js "./$envPath/staging.js"
-done
-echo "=== DONE COPY STAGING ENVIRONMENT FILE ==="
+if [ "$INCLUDE_DRONE" = true ]
+then
+  cloneRepository $droneRepository
 
+  if [ "$DRONE_VERSION" = "latest" ]
+  then
+    cd ./$dronePath
+    DRONE_VERSION=$(git describe --tags `git rev-list --tags --max-count=1`)
+    cd ../
+  fi
+
+  repositoryActions2 $dronePath $DRONE_VERSION "deploy/drone-ci" filesToRemove[@]
+  changeDroneRepository $dronePath "deploy/drone-ci"
+  copyFileToShip $dronePath "deploy/drone-ci"
+  commitFiles $dronePath $DRONE_VERSION
+fi
+
+sed -i "1s/^/  4) deploy drone version [$DRONE_VERSION](https:\/\/github.com\/paralect\/deploy-drone\/releases\/tag\/$GRONE_VERSION)\n\n/" CHANGELOG.md
 sed -i "1s/^/  3) web version [$WEB_VERSION](https:\/\/github.com\/paralect\/koa-react-starter\/releases\/tag\/$WEB_VERSION)\n\n/" CHANGELOG.md
 sed -i "1s/^/  2) landing version [$LANDING_VERSION](https:\/\/github.com\/paralect\/nextjs-landing-starter\/releases\/tag\/$LANDING_VERSION)\n/" CHANGELOG.md
 sed -i "1s/^/  1) api version [$API_VERSION](https:\/\/github.com\/paralect\/koa-api-starter\/releases\/tag\/$API_VERSION)\n/" CHANGELOG.md
@@ -196,10 +283,6 @@ sed -i "1s/^/* New release of ship with the following components:\n/" CHANGELOG.
 
 releaseDate=`date '+%B %d, %Y'`;
 sed -i "1s/^/## $SHIP_VERSION ($releaseDate)\n\n/" CHANGELOG.md
-
-regeneratePackageLock "api"
-regeneratePackageLock "web"
-regeneratePackageLock "landing"
 
 git add -A;
 git commit -m "Version $SHIP_VERSION";
