@@ -95,7 +95,7 @@ repositoryActions2() {
   sed -zri 's/,\n  }/\n  }/g' package.json
   mkdir -p ../temp_path;
   mv * ../temp_path;
-  mkdir $3;
+  mkdir -p $3;
   mv ../temp_path/* $3/;
   unset GLOBIGNORE;
   
@@ -125,8 +125,9 @@ copyCommitsToShip() {
 copyFileToShip() {
   echo "=== START COPY FILES TO THE SHIP REPOSITORY FROM $1 ==="
   
+  rm -rf ./$1/$2/.git
   rm -rf ./$shipPath/$2
-  cp ./$1/$2 ./$shipPath/$2
+  mv ./$1/$2 ./$shipPath
   
   echo "=== END COPY FILES ==="
 }
@@ -140,7 +141,7 @@ copyStagingEnvironmentFile() {
 commitFiles() {
   echo "=== START COMMIT $1 FILES==="
 
-  cd ./$ship
+  cd ./$shipPath
   git add -A;
   git commit -m "Merge $1. Version $2"
 
@@ -198,11 +199,13 @@ cd ../
 INCLUDE_API=$config_services_api_include;
 INCLUDE_WEB=$config_services_web_include;
 INCLUDE_LANDING=$config_services_landing_include;
+INCLUDE_DRONE=$config_services_drone_include;
 
 SHIP_VERSION=$config_services_ship_version;
 API_VERSION=$config_services_api_version;
 WEB_VERSION=$config_services_web_version;
 LANDING_VERSION=$config_services_landing_version;
+DRONE_VERSION=$config_services_drone_version;
 
 echo "=== END PARSE FILE ==="
 
@@ -275,8 +278,10 @@ then
   commitFiles $dronePath $DRONE_VERSION
 fi
 
-sed -i "1s/^/  4) deploy drone version [$DRONE_VERSION](https:\/\/github.com\/paralect\/deploy-drone\/releases\/tag\/$GRONE_VERSION)\n\n/" CHANGELOG.md
-sed -i "1s/^/  3) web version [$WEB_VERSION](https:\/\/github.com\/paralect\/koa-react-starter\/releases\/tag\/$WEB_VERSION)\n\n/" CHANGELOG.md
+cd ./$shipPath
+
+sed -i "1s/^/  4) deploy drone version [$DRONE_VERSION](https:\/\/github.com\/paralect\/deploy-drone\/releases\/tag\/$DRONE_VERSION)\n\n/" CHANGELOG.md
+sed -i "1s/^/  3) web version [$WEB_VERSION](https:\/\/github.com\/paralect\/koa-react-starter\/releases\/tag\/$WEB_VERSION)\n/" CHANGELOG.md
 sed -i "1s/^/  2) landing version [$LANDING_VERSION](https:\/\/github.com\/paralect\/nextjs-landing-starter\/releases\/tag\/$LANDING_VERSION)\n/" CHANGELOG.md
 sed -i "1s/^/  1) api version [$API_VERSION](https:\/\/github.com\/paralect\/koa-api-starter\/releases\/tag\/$API_VERSION)\n/" CHANGELOG.md
 sed -i "1s/^/* New release of ship with the following components:\n/" CHANGELOG.md
