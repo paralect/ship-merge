@@ -4,11 +4,13 @@ INCLUDE_API=false;
 INCLUDE_WEB=false;
 INCLUDE_LANDING=false;
 INCLUDE_DRONE=false;
+INCLUDE_GRAFANA=false;
 
 API_VERSION="";
 WEB_VERSION="";
 LANDING_VERSION="";
 DRONE_VERSION="";
+GRAFANA_VERSION="";
 
 SHIP_VERSION="";
 
@@ -21,12 +23,14 @@ reactRepository="https://github.com/paralect/koa-react-starter"
 apiRepository="https://github.com/paralect/koa-api-starter"
 landingRepository="https://github.com/paralect/nextjs-landing-starter"
 droneRepository="https://github.com/paralect/deploy-drone"
+grafanaRepository="https://github.com/paralect/deploy-grafana"
 
 shipPath="ship"
 reactPath="koa-react-starter"
 apiPath="koa-api-starter"
 landingPath="nextjs-landing-starter"
 dronePath="deploy-drone"
+grafanaPath="deploy-grafana"
 
 reactEnvironmentPath="src/server/config/environment"
 apiEnvironmentPath="src/config/environment"
@@ -127,7 +131,7 @@ copyFileToShip() {
   
   rm -rf ./$1/$2/.git
   rm -rf ./$shipPath/$2
-  mv ./$1/$2 ./$shipPath
+  mv ./$1/$2 ./$shipPath/$3
   
   echo "=== END COPY FILES ==="
 }
@@ -179,12 +183,12 @@ changeRepository() {
   repositoryActions2 $1 $2 $3 filesToRemove[@]
   copyStagingEnvironmentFile "$1/$3" $4
   regeneratePackageLock "$1/$3"
-  copyFileToShip $1 $3
+  copyFileToShip $1 $3 ""
   commitFiles $1 $2
 }
 
-changeDroneRepository() {
-  cd ./$dronePath/deploy/drone-ci
+changeDeployRepository() {
+  cd ./$1/$2
   rm package.json
   cd ../../../
 }
@@ -200,12 +204,14 @@ INCLUDE_API=$config_services_api_include;
 INCLUDE_WEB=$config_services_web_include;
 INCLUDE_LANDING=$config_services_landing_include;
 INCLUDE_DRONE=$config_services_drone_include;
+INCLUDE_GRAFANA=$config_services_monitoring_include;
 
 SHIP_VERSION=$config_services_ship_version;
 API_VERSION=$config_services_api_version;
 WEB_VERSION=$config_services_web_version;
 LANDING_VERSION=$config_services_landing_version;
 DRONE_VERSION=$config_services_drone_version;
+GRAFANA_VERSION=$config_services_monitoring_version;
 
 echo "=== END PARSE FILE ==="
 
@@ -273,14 +279,32 @@ then
   fi
 
   repositoryActions2 $dronePath $DRONE_VERSION "deploy/drone-ci" filesToRemove[@]
-  changeDroneRepository $dronePath "deploy/drone-ci"
-  copyFileToShip $dronePath "deploy/drone-ci"
+  changeDeployRepository $dronePath "deploy/drone-ci"
+  copyFileToShip $dronePath "deploy/drone-ci" "deploy"
   commitFiles $dronePath $DRONE_VERSION
+fi
+
+if [ "$INCLUDE_GRAFANA" = true ]
+then
+  cloneRepository $grafanaRepository
+
+  if [ "$GRAFANA_VERSION" = "latest" ]
+  then
+    cd ./$grafanaPath
+    GRAFANA_VERSION=$(git describe --tags `git rev-list --tags --max-count=1`)
+    cd ../
+  fi
+
+  repositoryActions2 $grafanaPath $GRAFANA_VERSION "deploy/monitoring" filesToRemove[@]
+  changeDeployRepository $grafanaPath "deploy/monitoring"
+  copyFileToShip $grafanaPath "deploy/monitoring" "deploy"
+  commitFiles $grafanaPath $GRAFANA_VERSION
 fi
 
 cd ./$shipPath
 
-sed -i "1s/^/  4) deploy drone version [$DRONE_VERSION](https:\/\/github.com\/paralect\/deploy-drone\/releases\/tag\/$DRONE_VERSION)\n\n/" CHANGELOG.md
+sed -i "1s/^/  5) deploy grafana version [$GRAFANA_VERSION](https:\/\/github.com\/paralect\/deploy-grafana\/releases\/tag\/$GRAFANA_VERSION)\n\n/" CHANGELOG.md
+sed -i "1s/^/  4) deploy drone version [$DRONE_VERSION](https:\/\/github.com\/paralect\/deploy-drone\/releases\/tag\/$DRONE_VERSION)\n/" CHANGELOG.md
 sed -i "1s/^/  3) web version [$WEB_VERSION](https:\/\/github.com\/paralect\/koa-react-starter\/releases\/tag\/$WEB_VERSION)\n/" CHANGELOG.md
 sed -i "1s/^/  2) landing version [$LANDING_VERSION](https:\/\/github.com\/paralect\/nextjs-landing-starter\/releases\/tag\/$LANDING_VERSION)\n/" CHANGELOG.md
 sed -i "1s/^/  1) api version [$API_VERSION](https:\/\/github.com\/paralect\/koa-api-starter\/releases\/tag\/$API_VERSION)\n/" CHANGELOG.md
