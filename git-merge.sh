@@ -38,6 +38,7 @@ landingEnvironmentPath="src/server/config/environment"
 
 filesToRemove=( ".drone.yml"
                 "docker-compose.yml"
+                "docker-compose.test.yml"
                 "LICENSE"
                 "CHANGELOG.md"
                 "CODE_OF_CONDUCT.md"
@@ -49,7 +50,7 @@ filesToRemove=( ".drone.yml"
 repositoryActions() {
   declare -a files=("${!4}")
   cd ./$1
-  
+
   echo "### $1 ###"
 
   if [ "$2" != "master" ]
@@ -58,7 +59,7 @@ repositoryActions() {
   fi
 
   echo "=== START REMOVE UNNECESSARY FILES FROM HISTORY ==="
-  
+
   git filter-branch --tree-filter "
     GLOBIGNORE='n*';
     rm ${files[*]};
@@ -71,7 +72,7 @@ repositoryActions() {
     mv ../temp_path/* $3/;
     unset GLOBIGNORE;
   " --force --prune-empty HEAD
-  
+
   git branch -D master
   git checkout -b master
   echo "=== DONE REMOVE FILES FROM HISTORY ==="
@@ -82,7 +83,7 @@ repositoryActions() {
 repositoryActions2() {
   declare -a files=("${!4}")
   cd ./$1
-  
+
   echo "### $1 ###"
 
   if [ "$2" != "master" ]
@@ -91,7 +92,7 @@ repositoryActions2() {
   fi
 
   echo "=== START REMOVE UNNECESSARY FILES FROM HISTORY ==="
-  
+
   GLOBIGNORE='n*';
   rm -f ${files[*]};
   mv SHIP_README.md README.md
@@ -102,7 +103,7 @@ repositoryActions2() {
   mkdir -p $3;
   mv ../temp_path/* $3/;
   unset GLOBIGNORE;
-  
+
   echo "=== DONE REMOVE FILES FROM HISTORY ==="
 
   cd ../
@@ -117,7 +118,7 @@ cloneRepository() {
 copyCommitsToShip() {
   echo "=== START COPY COMMITS TO THE SHIP REPOSITORY from $1 ==="
   cd ./$shipPath
-      
+
   git remote add repo-$1 ../$1/.git
   git pull repo-$1 master --allow-unrelated-histories --no-edit
   git remote rm repo-$1
@@ -128,11 +129,11 @@ copyCommitsToShip() {
 
 copyFileToShip() {
   echo "=== START COPY FILES TO THE SHIP REPOSITORY FROM $1 ==="
-  
+
   rm -rf ./$1/$2/.git
   rm -rf ./$shipPath/$2
   mv ./$1/$2 ./$shipPath/$3
-  
+
   echo "=== END COPY FILES ==="
 }
 
