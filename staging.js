@@ -1,6 +1,6 @@
 module.exports = {
   mongo: {
-    connection: 'mongodb://root:rootPassword@mongo:27017/api-development?authSource=admin',
+    connection: 'mongodb://root:rootPassword@mongo-0.mongo:27017/api-development?authSource=admin',
   },
   session: {
     secret: 'session_staging_secret',
@@ -23,3 +23,4 @@ module.exports = {
     domain: 'sandbox492d785e56fe42cdb3266d86c53cffca.mailgun.org',
   },
 };
+
