@@ -1,6 +1,6 @@
 module.exports = {
   mongo: {
-    connection: 'mongodb://mongo:27017/ship-staging',
+    connection: 'mongodb://root:rootPassword@mongo:27017/api-development?authSource=admin',
   },
   session: {
     secret: 'session_staging_secret',
