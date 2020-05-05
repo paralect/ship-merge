@@ -1,0 +1,15 @@
+{
+  "scripts": {
+    "start": "./bin/start.sh",
+    "test": "./bin/run-tests.sh"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lerna run --no-bail --stream pre-commit"
+    }
+  },
+  "devDependencies": {
+    "husky": "4.2.3",
+    "lerna": "3.20.2"
+  }
+}
