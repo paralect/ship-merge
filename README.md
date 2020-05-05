@@ -1,6 +1,6 @@
 # Ship Merge
 
-A simple utility that helps merging ship-components into monorepo.
+A simple utility that helps to create a monorepo based on ship-components.
 
 Just run the following in your terminal, then follow the on-screen instructions.
 ```
