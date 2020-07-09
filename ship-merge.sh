@@ -68,7 +68,6 @@ filesToRemove=( ".drone.yml"
                 "CODE_OF_CONDUCT.md"
                 ".all-contributorsrc"
                 "CONTRIBUTING.md"
-                "README.md"
                 "SHIP_README.md" )
 
 function installService() {
