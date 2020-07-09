@@ -50,7 +50,6 @@ services:
       - ship-test
     environment:
       NODE_ENV: development
-      HRM_HOST: 0.0.0.0
 
 networks:
   ship-test:

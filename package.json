@@ -1,7 +1,8 @@
 {
   "scripts": {
     "start": "./bin/start.sh",
-    "test": "./bin/run-tests.sh"
+    "test": "./bin/run-tests.sh",
+    "bootstrap": "lerna bootstrap"
   },
   "husky": {
     "hooks": {
