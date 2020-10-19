@@ -24,6 +24,10 @@ web_react="React Web Starter"
 web_react_dir="web"
 web_react_repo="https://github.com/paralect/koa-react-starter"
 
+web_vue="Vue.js Web Starter"
+web_vue_dir="web"
+web_vue_repo="https://github.com/paralect/vue-starter"
+
 landing_nextjs="Next.js Landing Starter"
 landing_nextjs_dir="landing"
 landing_nextjs_repo="https://github.com/paralect/nextjs-landing-starter"
@@ -54,10 +58,23 @@ function read_api_framework() {
   fi
 }
 
+function read_web_framework() {
+  printf "\n? Select web framework (React or Vue.js): "
+  read api
+  if [[ "$api" = React ]]; then
+    services+=("$web_react")
+  elif [[ "$api" = Vue.js ]]; then
+    services+=("$web_vue")
+  else
+    printf "! Try again\n"
+    read_web_framework
+  fi
+}
+
 read_api_framework
+[[ $INCLUDE_WEB = true ]] && read_web_framework
 
 [[ $INCLUDE_DEPLOY = true ]] && services+=("$deploy")
-[[ $INCLUDE_WEB = true ]] && services+=("$web_react")
 [[ $INCLUDE_LANDING = true ]] && services+=("$landing_nextjs")
 
 filesToRemove=( ".drone.yml"
@@ -109,6 +126,9 @@ for service in "${services[@]}"; do
     ;;
     "$web_react")
       installService "$service" "$web_react_repo" "$web_react_dir"
+    ;;
+    "$web_vue")
+      installService "$service" "$web_vue_repo" "$web_vue_dir"
     ;;
     "$landing_nextjs")
       installService "$service" "$landing_nextjs_repo" "$landing_nextjs_dir"
