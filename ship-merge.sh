@@ -4,7 +4,6 @@ set -e
 INCLUDE_DEPLOY=true
 INCLUDE_API=true
 INCLUDE_WEB=true
-INCLUDE_LANDING=true
 
 template_repo="https://github.com/paralect/ship-merge"
 
@@ -27,10 +26,6 @@ web_react_repo="https://github.com/paralect/koa-react-starter"
 web_vue="Vue.js Web Starter"
 web_vue_dir="web"
 web_vue_repo="https://github.com/paralect/vue-starter"
-
-landing_nextjs="Next.js Landing Starter"
-landing_nextjs_dir="landing"
-landing_nextjs_repo="https://github.com/paralect/nextjs-landing-starter"
 
 function read_project_name() {
   printf "\n? Enter project name: "
@@ -75,7 +70,6 @@ read_api_framework
 [[ $INCLUDE_WEB = true ]] && read_web_framework
 
 [[ $INCLUDE_DEPLOY = true ]] && services+=("$deploy")
-[[ $INCLUDE_LANDING = true ]] && services+=("$landing_nextjs")
 
 filesToRemove=( ".drone.yml"
                 "docker-compose.yml"
@@ -129,9 +123,6 @@ for service in "${services[@]}"; do
     ;;
     "$web_vue")
       installService "$service" "$web_vue_repo" "$web_vue_dir"
-    ;;
-    "$landing_nextjs")
-      installService "$service" "$landing_nextjs_repo" "$landing_nextjs_dir"
     ;;
   esac
 done
