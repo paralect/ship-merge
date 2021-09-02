@@ -107,6 +107,10 @@ git clone --quiet "$template_repo" .
 rm -rf .git ship-merge.sh
 echo "# $project_name" > README.md
 
+for i in docker-compose*; do
+  sed -i "" "s/ship/$project_name/" $i
+done
+
 for service in "${services[@]}"; do
   case "$service" in
     "$deploy")
