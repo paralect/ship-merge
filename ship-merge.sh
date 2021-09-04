@@ -108,7 +108,7 @@ rm -rf .git ship-merge.sh
 echo "# $project_name" > README.md
 
 for i in docker-compose*; do
-  sed -i "" "s/ship/$project_name/" $i
+  sed -i "" "s/ship/$project_name/g" $i
 done
 
 for service in "${services[@]}"; do
