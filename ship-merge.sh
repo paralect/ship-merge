@@ -4,12 +4,15 @@ set -e
 INCLUDE_DEPLOY=true
 INCLUDE_API=true
 INCLUDE_WEB=true
+INCLUDE_SHARED=true
 
 template_repo="https://github.com/paralect/ship-merge"
 
 deploy="Deploy"
 deploy_dir="deploy"
 deploy_repo="https://github.com/paralect/ship-deploy"
+
+shared_dir="shared"
 
 api_dotnet=".NET API Starter"
 api_dotnet_dir="api"
@@ -121,6 +124,11 @@ for service in "${services[@]}"; do
     ;;
     "$api_koa")
       installService "$service" "$api_koa_repo" "$api_koa_dir"
+      cd ..
+      if [[ $INCLUDE_SHARED = true ]]; then
+        cp -R shared $project_name
+      fi
+      cd $project_name
     ;;
     "$web_react")
       installService "$service" "$web_react_repo" "$web_react_dir"
