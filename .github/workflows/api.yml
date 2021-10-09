@@ -1,0 +1,29 @@
+name: api
+on:
+  push:
+    branches: [ main, production ]
+    paths:
+      - 'api/**'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set env vars (staging)
+        if: endsWith(github.ref, '/main')
+        run: echo "APP_ENV=staging" >> $GITHUB_ENV
+      - name: Set env vars (production)
+        if: endsWith(github.ref, '/production')
+        run: echo "APP_ENV=production" >> $GITHUB_ENV
+      - name: Build api
+        id: build-app
+        run: |
+          docker build -f deploy/script/Dockerfile -t deploy ./
+          docker run -v /var/run/docker.sock:/var/run/docker.sock:rw \
+          -e DOCKER_AUTH_USERNAME=${{ secrets.DIGITAL_OCEAN_TOKEN }} \
+          -e DOCKER_AUTH_PASSWORD=${{ secrets.DIGITAL_OCEAN_TOKEN }} \
+          -e KUBE_CONFIG="${{ secrets.KUBE_CONFIG }}" \
+          -e SERVICE=api \
+          -e IMAGE_TAG=${{ env.APP_ENV }}.${{ github.sha }} \
+          -e NAMESPACE=${{ env.APP_ENV }} \
+          deploy
