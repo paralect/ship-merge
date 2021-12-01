@@ -19,11 +19,11 @@ api_koa="Koa API Starter"
 api_koa_dir="api"
 api_koa_repo="https://github.com/paralect/koa-api-starter"
 
-web_react="React Web Starter"
-web_react_dir="web"
-web_react_repo="https://github.com/paralect/koa-react-starter"
+web_next="Next Web Starter"
+web_next_dir="web"
+web_next_repo="https://github.com/paralect/next-starter"
 
-web_vue="Vue.js Web Starter"
+web_vue="Vue Web Starter"
 web_vue_dir="web"
 web_vue_repo="https://github.com/paralect/vue-starter"
 
@@ -54,11 +54,11 @@ function read_api_framework() {
 }
 
 function read_web_framework() {
-  printf "\n? Select web framework (React or Vue.js): "
+  printf "\n? Select web framework (Next or Vue): "
   read api
-  if [[ "$api" = React ]]; then
-    services+=("$web_react")
-  elif [[ "$api" = Vue.js ]]; then
+  if [[ "$api" = Next ]]; then
+    services+=("$web_next")
+  elif [[ "$api" = Vue ]]; then
     services+=("$web_vue")
   else
     printf "! Try again\n"
@@ -122,8 +122,8 @@ for service in "${services[@]}"; do
     "$api_koa")
       installService "$service" "$api_koa_repo" "$api_koa_dir"
     ;;
-    "$web_react")
-      installService "$service" "$web_react_repo" "$web_react_dir"
+    "$web_next")
+      installService "$service" "$web_next_repo" "$web_next_dir"
     ;;
     "$web_vue")
       installService "$service" "$web_vue_repo" "$web_vue_dir"
