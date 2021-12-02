@@ -4,13 +4,8 @@
     "test": "./bin/run-tests.sh",
     "bootstrap": "lerna bootstrap"
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lerna run --no-bail --stream pre-commit"
-    }
-  },
   "devDependencies": {
-    "husky": "4.2.3",
-    "lerna": "3.20.2"
+    "husky": "7.0.4",
+    "lerna": "4.0.0"
   }
 }
