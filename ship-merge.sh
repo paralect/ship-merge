@@ -1,14 +1,10 @@
 #!/usr/bin/env bash
 set -e
-
-INCLUDE_DEPLOY=true
-INCLUDE_API=true
-INCLUDE_WEB=true
+shopt -s dotglob
 
 template_repo="https://github.com/paralect/ship-merge"
 
-deploy="Deploy"
-deploy_dir="deploy"
+deploy_dir="deploy-setup"
 deploy_repo="https://github.com/paralect/ship-deploy"
 
 api_dotnet=".NET API Starter"
@@ -36,10 +32,6 @@ function read_project_name() {
   fi
 }
 
-read_project_name
-
-services=()
-
 function read_api_framework() {
   printf "\n? Select API framework (Koa or .NET): "
   read api
@@ -66,20 +58,34 @@ function read_web_framework() {
   fi
 }
 
+function read_platform() {
+  printf "\n? Select platform (Digital Ocean or AWS): "
+  read api
+  if [[ "$api" = 'Digital Ocean' ]]; then
+    platform="$api"
+    platform_dir=digital-ocean
+  elif [[ "$api" = AWS ]]; then
+    platform="$api"
+    platform_dir=aws
+  else
+    printf "! Try again\n"
+    read_platform
+  fi
+}
+
+read_project_name
+
+platform=""
+services=()
+
 read_api_framework
-[[ $INCLUDE_WEB = true ]] && read_web_framework
+read_web_framework
+read_platform
 
-[[ $INCLUDE_DEPLOY = true ]] && services+=("$deploy")
-
-filesToRemove=( ".drone.yml"
-                "docker-compose.yml"
-                "docker-compose.test.yml"
-                "LICENSE"
-                "CHANGELOG.md"
-                "CODE_OF_CONDUCT.md"
-                ".all-contributorsrc"
-                "CONTRIBUTING.md"
-                "SHIP_README.md" )
+filesToRemove=(
+  "docker-compose.yml"
+  "docker-compose.test.yml"
+)
 
 function installService() {
   service="$1"
@@ -100,6 +106,8 @@ printf "  Project name\n"
 printf "    $project_name\n"
 printf "  Services\n"
 printf "    %s\n" "${services[@]}"
+printf "  Platform\n"
+printf "    $platform\n"
 
 mkdir $project_name
 cd $project_name
@@ -113,9 +121,6 @@ done
 
 for service in "${services[@]}"; do
   case "$service" in
-    "$deploy")
-      installService "$service" "$deploy_repo" "$deploy_dir"
-    ;;
     "$api_dotnet")
       installService "$service" "$api_dotnet_repo" "$api_dotnet_dir"
     ;;
@@ -130,6 +135,15 @@ for service in "${services[@]}"; do
     ;;
   esac
 done
+
+installService "$platform" "$deploy_repo" "$deploy_dir"
+
+mv ./"$deploy_dir"/"$platform_dir" ./deploy
+mv ./"$deploy_dir"/.gitignore ./deploy
+mv ./"$deploy_dir"/README.md ./deploy
+mv ./deploy/.github .
+
+rm -rf "$deploy_dir"
 
 npm install
 git init
