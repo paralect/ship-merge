@@ -54,7 +54,6 @@ services:
       - ./api/src:/app/src
     ports:
       - 3001:3001
-      - 8082:8082
     depends_on:
       - redis
       - mongo-replicator
@@ -92,11 +91,9 @@ services:
     networks:
       - ship
     environment:
-      NODE_ENV: development
-      HRM_HOST: 0.0.0.0
+      NEXT_PUBLIC_APP_ENV: development
     ports:
       - 3002:3002
-      - 8081:8081
 
 networks:
   ship:
