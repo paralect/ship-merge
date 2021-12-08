@@ -131,4 +131,11 @@ for service in "${services[@]}"; do
   esac
 done
 
+npm install
+git init
+git add .
+git commit -m "initial commit"
+git branch -M main
+npx husky install
+
 printf "\n! Installation completed\n"
