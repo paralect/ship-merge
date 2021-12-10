@@ -19,10 +19,6 @@ web_next="Next Web Starter"
 web_next_dir="web"
 web_next_repo="https://github.com/paralect/next-starter"
 
-web_vue="Vue Web Starter"
-web_vue_dir="web"
-web_vue_repo="https://github.com/paralect/vue-starter"
-
 function read_project_name() {
   printf "\n? Enter project name: "
   read project_name
@@ -45,19 +41,6 @@ function read_api_framework() {
   fi
 }
 
-function read_web_framework() {
-  printf "\n? Select web framework (Next or Vue): "
-  read api
-  if [[ "$api" = Next ]]; then
-    services+=("$web_next")
-  elif [[ "$api" = Vue ]]; then
-    services+=("$web_vue")
-  else
-    printf "! Try again\n"
-    read_web_framework
-  fi
-}
-
 function read_platform() {
   printf "\n? Select platform (Digital Ocean or AWS): "
   read api
@@ -76,15 +59,13 @@ function read_platform() {
 read_project_name
 
 platform=""
-services=()
+services=("$web_next")
 
 read_api_framework
-read_web_framework
 read_platform
 
 filesToRemove=(
   "docker-compose.yml"
-  "docker-compose.test.yml"
 )
 
 function installService() {
@@ -129,9 +110,6 @@ for service in "${services[@]}"; do
     ;;
     "$web_next")
       installService "$service" "$web_next_repo" "$web_next_dir"
-    ;;
-    "$web_vue")
-      installService "$service" "$web_vue_repo" "$web_vue_dir"
     ;;
   esac
 done
