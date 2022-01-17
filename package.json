@@ -1,7 +1,6 @@
 {
   "scripts": {
     "start": "./bin/start.sh",
-    "test": "./bin/run-tests.sh",
     "bootstrap": "lerna bootstrap"
   },
   "devDependencies": {
