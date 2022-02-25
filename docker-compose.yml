@@ -98,6 +98,7 @@ services:
         NODE_ENV: development
     volumes:
       - ./web/src:/app/src
+      - ./web/public:/app/public
     networks:
       - ship
     ports:
