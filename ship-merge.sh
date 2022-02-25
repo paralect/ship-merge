@@ -66,6 +66,7 @@ read_platform
 
 filesToRemove=(
   "docker-compose.yml"
+  ".husky"
 )
 
 function installService() {
