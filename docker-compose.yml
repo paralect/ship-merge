@@ -48,7 +48,6 @@ services:
       dockerfile: Dockerfile.dev
       args:
         APP_ENV: development
-        NODE_ENV: development
     networks:
       - ship
     volumes:
