@@ -66,7 +66,6 @@ services:
       dockerfile: Dockerfile.dev
       args:
         APP_ENV: development
-        NODE_ENV: development
     networks:
       - ship
     volumes:
@@ -81,7 +80,6 @@ services:
       dockerfile: Dockerfile.dev
       args:
         APP_ENV: development
-        NODE_ENV: development
     networks:
       - ship
     volumes:
@@ -95,7 +93,6 @@ services:
       dockerfile: Dockerfile.dev
       args:
         APP_ENV: development
-        NODE_ENV: development
     volumes:
       - ./web/src:/app/src
       - ./web/public:/app/public
