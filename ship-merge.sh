@@ -121,8 +121,11 @@ mv ./"$deploy_dir"/"$platform_dir" ./deploy
 mv ./"$deploy_dir"/.gitignore ./deploy
 mv ./"$deploy_dir"/README.md ./deploy
 mv ./deploy/.github .
+mv  workflows/chromatic.yml .github/workflows
 
 rm -rf "$deploy_dir"
+rm -rf web/.github
+rm -rf workflows
 
 npm install
 git init
